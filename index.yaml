@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  aws-ocp-cluster:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2020-07-24T16:29:43.333015+05:30"
+    description: A Helm chart for Kubernetes
+    digest: b3558861d8178cef3371f904d473120f92718397dec65f11c8552f4cfa3c7d1b
+    name: aws-ocp-cluster
+    urls:
+    - aws-ocp-cluster-0.1.0.tgz
+    version: 0.1.0
+generated: "2020-07-24T16:29:43.327859+05:30"

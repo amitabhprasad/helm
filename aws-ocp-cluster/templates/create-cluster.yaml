@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.clusterName }}
+  labels:
+    open-cluster-management.io/managedCluster: {{ .Values.clusterName }}
+---
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  name: {{ .Values.clusterName }}
+  namespace: {{ .Values.clusterName }}
+  labels:
+    cloud: 'AWS'
+    region: {{ .Values.platform.aws.region }}
+    vendor: 'OpenShift'
+spec:
+  baseDomain: {{ .Values.baseDomain }}
+  clusterName: {{ .Values.clusterName }}
+  controlPlaneConfig:
+    servingCertificates: {}
+  installed: false
+  platform:
+    aws:
+      credentialsSecretRef:
+        name: {{ .Values.clusterName }}-aws-creds
+      region: {{ .Values.platform.aws.region }}
+  provisioning:
+    installConfigSecretRef:
+      name: {{ .Values.clusterName }}-install-config
+    sshPrivateKeySecretRef:
+      name: {{ .Values.clusterName }}-ssh-private-key
+    imageSetRef:
+       #quay.io/openshift-release-dev/ocp-release:4.3.21-x86_64
+      name: {{ .Values.imageSetRef.name }}
+  pullSecretRef:
+    name: {{ .Values.clusterName }}-pull-secret
+---
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  labels:
+    cloud: Amazon
+    name: {{ .Values.clusterName }}
+    vendor: OpenShift
+  name: {{ .Values.clusterName }}
+spec:
+  hubAcceptsClient: true
+---
+apiVersion: hive.openshift.io/v1
+kind: MachinePool
+metadata:
+  name: {{ .Values.clusterName }}-worker
+  namespace: {{ .Values.clusterName }}
+spec:
+  clusterDeploymentRef:
+    name: {{ .Values.clusterName }}
+  name: worker
+  platform:
+    aws:
+      rootVolume:
+        iops: 100
+        size: 100
+        type: gp2
+      type: {{ .Values.platform.aws.type}}
+  replicas: {{ .Values.replicas}}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.clusterName }}-pull-secret
+  namespace: {{ .Values.clusterName }}
+stringData:
+  .dockerconfigjson: |-
+    {{ .Values.stringData.dockerconfigjson}}
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.clusterName }}-install-config
+  namespace: {{ .Values.clusterName }}
+type: Opaque
+data:
+  # Base64 encoding of install-config yaml
+  install-config.yaml:  {{ .Values.data.installconfig }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.clusterName }}-ssh-private-key
+  namespace: {{ .Values.clusterName }}
+stringData:
+  ssh-privatekey: |-
+    -----BEGIN RSA PRIVATE KEY-----
+    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
+    -----END RSA PRIVATE KEY-----
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: {{ .Values.clusterName }}-aws-creds
+  namespace: {{ .Values.clusterName }}
+stringData:
+  aws_access_key_id: {{ .Values.stringData.aws_access_key_id }}
+  aws_secret_access_key: {{ .Values.stringData.aws_secret_access_key }}
+---
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: {{ .Values.clusterName }}
+  namespace: {{ .Values.clusterName }}
+spec:
+  clusterName: {{ .Values.clusterName }}
+  clusterNamespace: {{ .Values.clusterName }}
+  clusterLabels:
+    cloud: Amazon
+    vendor: OpenShift
+  applicationManager:
+    enabled: true
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  cisPolicyController:
+    enabled: false
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true
+  version: 2.0.0
